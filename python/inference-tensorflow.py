@@ -1,7 +1,10 @@
 import tensorflow as tf
-import tensorflow_probability as tfp
+import tensorflow_probability.distributions as tfd
 import numpy as np
 import math
+
+tf = tf.compat.v1
+tf.disable_v2_behavior()
 
 
 # Taken from https://github.com/tensorflow/tensorflow/issues/9162
@@ -30,9 +33,7 @@ def inference_tensorflow(Y, rho, s, X, G, C, N, P, shrinkage, B=10, verbose=Fals
                          min_delta = 2,
                          dirichlet_concentration = 1e-2,
                          threads = 0):
-    tf = tf.compat.v1
-    tf.disable_v2_behavior()
-    tfd = tfp.distributions
+
 
     tf.reset_default_graph()
 
@@ -93,5 +94,21 @@ def inference_tensorflow(Y, rho, s, X, G, C, N, P, shrinkage, B=10, verbose=Fals
 
     # Model likelihood
     base_mean = tf.transpose(tf.einsum('np,gp->gn'), X_, beta) + tf.log(s_))
-    base_mean_list = []
-    for c in 
+    base_mean_list = [ base_mean for x in range(C) ]
+
+    mu_ngc = tf.add(tf.stack(base_mean_list, axis=2), tf.multiply(delta, rho_), name="adding_base_mean_to_delta_rho")
+
+    # reshape
+    mu_cng = tf.transpose(mu_ngc, perm=(2,0,1))
+
+    mu_cngb = tf.tile(tf.expand_dims(mu_cng, axis=3), (1,1,1,B))
+    
+    phi_cng = tf.reduce_sum(a * tf.exp(-b * tf.square(mu_cngb - basis_means)), 3) + LOWER_BOUND
+
+    phi = tf.transpose(phi_cng, perm=(1,2,0))
+
+    mu_ngc = tf.exp(tf.transpose(mu_cng, perm=(1,2,0)))
+
+    p = mu_ngc / (mu_ngc + phi)
+
+    nb_pdf = tfd.NegativeBinomial(probs=p, total_count = phi)
