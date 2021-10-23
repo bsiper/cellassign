@@ -9,3 +9,4 @@ data/hodgkin_500.rds
 inst/*.ai
 inst/*.pdf
 .vscode
+.DS_Store
