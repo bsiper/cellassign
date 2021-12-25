@@ -10,3 +10,13 @@ inst/*.ai
 inst/*.pdf
 .vscode
 .DS_Store
+
+__pycache__
+*.egg-info
+.eggs/*
+.pytest_cache/
+build/
+__pycache__/
+*.__pycache__
+.env
+.venv
